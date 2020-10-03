@@ -43,6 +43,7 @@ def get_paths_and_transform(num_line=64):
     def get_rgb_paths(p):
         ps = p.split('/')
         pnew = '/'.join([root_rgb]+ps[-6:-4]+ps[-2:-1]+['data']+ps[-1:])
+        print(pnew)
         return pnew
     
     glob_rgb = [get_rgb_paths(i) for i in paths_sparse_lidar]
@@ -115,38 +116,55 @@ class Data_load():
         self.lidar_path=lidar_path
         self.img_path=img_path
         self.num_sample=[i for i in range(len(self.img_path))]
+        self.index_array = self.num_sample
+        # identifying the indices in self.img_path list where the next scene starts 
+        scene_id = np.asarray([i.split('/')[-4] for i in self.img_path])
+        unique_values, first_index_of_scenes = np.unique(scene_id,return_index=True)
+        first_index_of_scenes = np.delete(first_index_of_scenes,0) 
+        # removing the last (self.frames-1) indices 
+        # before each first_index_of_scenes to prevent overlap
+        for i in first_index_of_scenes :
+        	j=1
+        	while (j<frames):
+	        	self.index_array.remove(i-j)
+	        	j += 1
+    	j=1
+    	while (j<frames):
+    		self.index_array.pop() # deleting the last (self.frames-1) image paths
+    		j += 1
+        self.index_array = np.asarray(self.index_array)
         # np.random.shuffle(self.num_sample)
         self.total_sample=len(self.img_path)
         self.frames = frames
         self.index=0
         
        
-    def read_frames(self, if_removal=False):
-        i=0
+    def read_frames(self, batch = 5, if_removal=False):
         img_frames=[]
         lidar_frames=[]
         gt_frames=[]
+        k=0
+        while (k<batch):
+            i=0
+            sample = np.random.choice(self.index_array,size=1) 
+            index = np.where(self.index_array==sample) 
+            self.index_array = np.delete(self.index_array, index[0][0])
+            while (i<(self.frames)):
+                img=rgb_read(self.img_path[self.num_sample[index+i]])
+                depth=depth_read(self.lidar_path[self.num_sample[index+i]])
+                
+                if if_removal:
+                    depth=outlier_removal(depth)
 
-        while (i<(self.frames)):
-            img=rgb_read(self.img_path[self.num_sample[self.index+i]])
-            depth=depth_read(self.lidar_path[self.num_sample[self.index+i]])
-            
-            if if_removal:
-                depth=outlier_removal(depth)
+                gt_path=img_path_to_ground_truth(self.img_path[self.num_sample[index+i]])
+                ground_truth=depth_read(gt_path)
 
-            gt_path=img_path_to_ground_truth(self.img_path[self.num_sample[self.index+i]])
-            ground_truth=depth_read(gt_path)
-
-            lidar_frames.append(depth)
-            img_frames.append(img)
-            gt_frames.append(ground_truth)
-            i=i+1
-            if i == self.frames:
-                self.index=self.index+1
-        if self.index+self.frames>self.total_sample:
-            return [0],[1],[2]
-        else:
-            return  np.asarray(lidar_frames),np.asarray(gt_frames),np.asarray(img_frames)
+                lidar_frames.append(depth)
+                img_frames.append(img)
+                gt_frames.append(ground_truth)
+                i=i+1
+            k=k+1
+        return  np.asarray(lidar_frames),np.asarray(gt_frames),np.asarray(img_frames)
 
         
 def read_one_val(index,line_number=64,with_semantic=True,if_removal=False):
