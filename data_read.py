@@ -43,7 +43,7 @@ def get_paths_and_transform(num_line=64):
     def get_rgb_paths(p):
         ps = p.split('/')
         pnew = '/'.join([root_rgb]+ps[-6:-4]+ps[-2:-1]+['data']+ps[-1:])
-        print(pnew)
+        # print(pnew)
         return pnew
     
     glob_rgb = [get_rgb_paths(i) for i in paths_sparse_lidar]
@@ -123,21 +123,20 @@ class Data_load():
         first_index_of_scenes = np.delete(first_index_of_scenes,0) 
         # removing the last (self.frames-1) indices 
         # before each first_index_of_scenes to prevent overlap
+		
+        for i in range(frames-1):
+        	self.index_array.pop()
+
         for i in first_index_of_scenes :
         	j=1
         	while (j<frames):
 	        	self.index_array.remove(i-j)
 	        	j += 1
-    	j=1
-    	while (j<frames):
-    		self.index_array.pop() # deleting the last (self.frames-1) image paths
-    		j += 1
+
         self.index_array = np.asarray(self.index_array)
         # np.random.shuffle(self.num_sample)
         self.total_sample=len(self.img_path)
         self.frames = frames
-        self.index=0
-        
        
     def read_frames(self, batch = 5, if_removal=False):
         img_frames=[]
@@ -147,8 +146,8 @@ class Data_load():
         while (k<batch):
             i=0
             sample = np.random.choice(self.index_array,size=1) 
-            index = np.where(self.index_array==sample) 
-            self.index_array = np.delete(self.index_array, index[0][0])
+            index = np.where(self.index_array==sample)[0][0] 
+            self.index_array = np.delete(self.index_array, index)
             while (i<(self.frames)):
                 img=rgb_read(self.img_path[self.num_sample[index+i]])
                 depth=depth_read(self.lidar_path[self.num_sample[index+i]])
