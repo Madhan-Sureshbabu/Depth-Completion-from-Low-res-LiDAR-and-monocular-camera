@@ -49,6 +49,19 @@ def get_paths_and_transform(num_line=64):
     glob_rgb = [get_rgb_paths(i) for i in paths_sparse_lidar]
     return paths_sparse_lidar,glob_rgb
 
+def get_calib_file(scene_date, camera_id): 
+    file_dir = './depth_selection/KITTI/calib/'+scene_date+'/calib_cam_to_cam.txt'
+    f_dir = os.path.join(file_dir)
+    f = open(f_dir)
+    for i,line in enumerate(f):
+        if camera_id=='image_02' and i==19:
+            K = np.array(line.split(' ')[1:], dtype=float).reshape(3,3)
+            return K
+        elif camera_id=='image_03' and i==27:
+            K = np.array(line.split(' ')[1:], dtype=float).reshape(3,3)
+            return K
+        
+
 
 def img_path_to_lidar(img_path):
     #img_path:'./Dataset/KITTI/RGB/train/2011_09_26_drive_0051_sync/image_02/data/0000000432.png'
@@ -142,12 +155,14 @@ class Data_load():
         img_frames=[]
         lidar_frames=[]
         gt_frames=[]
+        index_list = [] # for identifying calibration params using scene number
         k=0
         while (k<batch):
             i=0
             sample = np.random.choice(self.index_array,size=1) 
             index = np.where(self.index_array==sample)[0][0] 
             self.index_array = np.delete(self.index_array, index)
+            index_list.append(index)
             while (i<(self.frames)):
                 img=rgb_read(self.img_path[self.num_sample[index+i]])
                 depth=depth_read(self.lidar_path[self.num_sample[index+i]])
@@ -163,7 +178,7 @@ class Data_load():
                 gt_frames.append(ground_truth)
                 i=i+1
             k=k+1
-        return  np.asarray(lidar_frames),np.asarray(gt_frames),np.asarray(img_frames)
+        return  np.asarray(lidar_frames),np.asarray(gt_frames),np.asarray(img_frames), index_list
 
         
 def read_one_val(index,line_number=64,with_semantic=True,if_removal=False):

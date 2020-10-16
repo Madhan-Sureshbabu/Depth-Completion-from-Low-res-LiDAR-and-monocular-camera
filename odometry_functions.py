@@ -11,7 +11,7 @@ def genEulerZXZMatrix(psi, theta, sigma):
 	c2 = cos(theta)
 	s2 = sin(theta)
 	c3 = cos(sigma)
-	s4 = sin(sigma)
+	s3 = sin(sigma)
 
 	mat = np.zeros((3,3))
 
@@ -29,18 +29,29 @@ def genEulerZXZMatrix(psi, theta, sigma):
 
 def func(dof, pts_3d_1, pts_2d_2, P):
 	R = genEulerZXZMatrix(dof[0], dof[1], dof[2])
-	t = np.array([[dof[3], dof[4], dof[5]]])
+	t = np.array([[dof[3], dof[4], dof[5]]]).reshape(3,1)
 	T = np.hstack((R,t))
 	T = np.vstack((T,[[0,0,0,1]]))
+	# print(T)
 	forward = np.matmul(P,np.linalg.inv(T))
 	pred_pts_2d_2 = []
 	residual = np.zeros((len(pts_3d_1),3))
-	for i in range(pts_3d_1):
+	# print(residual)
+	for i in range(len(pts_3d_1)):
 		pred_pts_2d_2.append(np.matmul(forward,pts_3d_1[i]))
 		pred_pts_2d_2[i] = pred_pts_2d_2[i]/pred_pts_2d_2[i][-1]
+		# print(pred_pts_2d_2[i])
+		# print(pts_2d_2[i])
 		error = pts_2d_2[i] - pred_pts_2d_2[i]
+		# print(error)
 		residual[i,:] = error.reshape(1,3)[0]
-	return residual
+		# print(residual)
+	sq_error = np.asarray([i*i for i in residual])
+	# print(sq_error)
+	res = np.sum(sq_error,0)
+	res = np.asarray([res,res]).reshape(1,-1)[0]
+	# print(res)
+	return res
 
 def find_keypoints(image,lidar_image, feature_params):
 	gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -54,15 +65,17 @@ def track_features(image,features,next_image,lk_params):
 	next_features, status, error = cv2.calcOpticalFlowPyrLK(gray_image,next_gray_image, features,None,**lk_params)
 	return next_features,status, error
 
-def compute_3D_points(lidar_image,features,f,cx,cy):
+def compute_3D_points(lidar_image,features,K):
+	fx = K[0,0]
+	fy = K[1,1]
+	cx = K[0,2]
+	cy = K[1,2]
 	pts_3d_1 = []
-	pts_2d_2 = []
-	for j in range(len(features)):
-		x = int(features[i,0,1])
-		y = int(features[i,0,0])
-		depth = lidar_image[x,y,0]
-		pts_3d_1.append([x*depth/f,y*depth/f,depth])
-		pts_2d_2.append([x,y])
-	return pts_3d_1, pts_2d_2
+	for i in range(len(features)):
+		x = int(features[i,0])
+		y = int(features[i,1])
+		depth = lidar_image[y,x,0]
+		pts_3d_1.append([(x-cx)*depth/fx,(y-cy)*depth/fy,depth,1])
+	return np.asarray(pts_3d_1)
 
 
