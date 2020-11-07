@@ -149,9 +149,9 @@ def Calc_3DPts(DisparityA,PointsA,DisparityB,PointsB,\
         dB = DisparityB[int(PtB[1])][int(PtB[0])]/scale
         if dA > 0 and dB > 0:
             Pts_3DA.append([base*(PtA[0] - cx)/dA,\
-                            base*(PtA[1] - cy)/dA, f*base/dA])
+                            -base*(PtA[1] - cy)/dA, -f*base/dA])
             Pts_3DB.append([base*(PtB[0] - cx)/dB,\
-                            base*(PtB[1] - cy)/dB, f*base/dB])
+                            -base*(PtB[1] - cy)/dB, -f*base/dB])
             Pts_2DA.append(PtA)
             Pts_2DB.append(PtB)
     return np.asarray(Pts_2DA),np.asarray(Pts_2DB),\

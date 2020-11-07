@@ -63,6 +63,11 @@ def find_keypoints(image,lidar_image, feature_params):
 	mask_img = np.asarray(lidar_image,dtype=np.uint8) #cv2.inRange(lidar_image,lowerb=None,beta=0,aplha=np.amax(lidar_image),norm_type=cv2.NORM_MINMAX)
 	# plt.imshow(mask_img),plt.show()
 	features = cv2.goodFeaturesToTrack(gray_image, mask=mask_img, **feature_params)
+	# sift = cv2.xfeatures2d.SIFT_create()
+	# kps = sift.detect(gray_image,mask_img)
+	# features = []
+	# for kp in kps:
+	# 	features.append([kp.pt[0],kp.pt[1]]) 
 	return features
 
 def track_features(image,features,next_image,lk_params):
