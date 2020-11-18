@@ -26,6 +26,29 @@ sys.path.append("../")
 
 sys.path.append("../")
 
+def genEulerZXZMatrix(psi, theta, sigma):
+    c1 = cos(psi)
+    s1 = sin(psi)
+    c2 = cos(theta)
+    s2 = sin(theta)
+    c3 = cos(sigma)
+    s3 = sin(sigma)
+
+    mat = np.zeros((3,3))
+
+    mat[0,0] = (c1*c3) - (s1*c2*s3)
+    mat[0,1] = (-c1 * s3) - (s1 * c2 * c3)
+    mat[0,2] = (s1 * s2)
+    mat[1,0] = (s1 * c3) + (c1 * c2 * s3)
+    mat[1,1] = (-s1 * s3) + (c1 * c2 * c3)
+    mat[1,2] = (-c1 * s2)
+    mat[2,0] = (s2 * s3)
+    mat[2,1] = (s2 * c3)
+    mat[2,2] = c2
+
+    return mat
+
+
 def get_paths_and_transform(position):
     if position=='left':
         root_d = os.path.join('./odometry_dataset_gray/dataset/sequences/00/image_0/*.png')
@@ -108,14 +131,23 @@ def find_keypoints_stereoOdomLoader(image,mask_img, feature_params, thresh, cam,
     plt.imshow(disp_view1)
     plt.show()
 
-    features = cv2.goodFeaturesToTrack(image, mask=mask_img1, **feature_params)
     # fast = cv2.FastFeatureDetector_create(thresh,False)
     # key_pts = fast.detect(image,mask_img1)
-
     # features = [[kp.pt[0],kp.pt[1]] for kp in key_pts]
-    # return np.array(features,dtype=np.float32)
-    # return np.array(features,dtype=np.int).reshape(-1,2)
+
+    orb = cv2.ORB_create()
+    kps = orb.detect(image,mask_img)
+    features = []
+    for kp in kps:
+        features.append([kp.pt[0],kp.pt[1]]) 
+    features = np.array(features,dtype=np.float32).reshape(-1,1,2)
+
+    print("features shape ",features.shape)
+
+    # features = cv2.goodFeaturesToTrack(image, mask=mask_img1, **feature_params)
+    # print(features.shape)
     return features
+
 
 def match_features_stereoOdomLoader(image,next_image,disp1,disp2,thresh,cam,disparity_threshold_low,disparity_threshold_high):
     rows,cols = image.shape
@@ -185,6 +217,7 @@ class StereoCam():
         self.cx = 0
         self.cy = 0
         self.P = np.zeros((3,4))
+        self.R_rect = np.zeros((3,3))
 
     def getCameraParams(self,sceneId):
         f_dir = os.path.join('./odometry_dataset_gray/dataset/sequences/'+sceneId+'/calib.txt')
@@ -207,3 +240,24 @@ class StereoCam():
             delta = disp[y,x]/scale
             pts_3d.append([(x-self.cx)*self.base/delta, (y-self.cy)*self.base/delta, self.base*self.f/delta])
         return np.array(pts_3d)
+
+def func(dof, pts_3d_1, pts_2d_2, P):
+    R = genEulerZXZMatrix(dof[0], dof[1], dof[2])
+    t = np.array([[dof[3], dof[4], dof[5]]]).reshape(3,1)
+    T = np.hstack((R,t))
+    T = np.vstack((T,[[0,0,0,1]]))
+    forward = np.matmul(P,np.linalg.inv(T))
+    residual = np.zeros((len(pts_3d_1),3))
+    pred_pts_2d_2 = []
+    for i in range(len(pts_3d_1)):
+        pred_pts_2d_2.append(np.matmul(forward,pts_3d_1[i]))
+        pred_pts_2d_2[i] = pred_pts_2d_2[i]/pred_pts_2d_2[i][-1]
+        # print(pred_pts_2d_2[i])
+        # print(pts_2d_2[i])
+        error = pts_2d_2[i] - pred_pts_2d_2[i]
+        residual[i,:] = error.reshape(1,3)[0]
+    # sq_error = np.asarray([i*i for i in residual])
+    # print(sq_error)
+    res = residual.flatten()
+    # print(res.shape)
+    return res

@@ -53,13 +53,15 @@ def get_calib_file(scene_date, camera_id):
     file_dir = './depth_selection/KITTI/calib/'+scene_date+'/calib_cam_to_cam.txt'
     f_dir = os.path.join(file_dir)
     f = open(f_dir)
-    for i,line in enumerate(f):
-        if camera_id=='image_02' and i==19:
-            K = np.array(line.split(' ')[1:], dtype=float).reshape(3,3)
-            return K
-        elif camera_id=='image_03' and i==27:
-            K = np.array(line.split(' ')[1:], dtype=float).reshape(3,3)
-            return K
+    lines = f.readlines()
+    if camera_id=='image_02':
+        K = np.array(lines[25].split(' ')[1:], dtype=np.float32).reshape(3,4)
+        K = K[:3,:3]
+        return K
+    elif camera_id=='image_03':
+        K = np.array(lines[33].split(' ')[1:], dtype=np.float32).reshape(3,4)
+        K = K[:3,:3]
+        return K
         
 
 
@@ -150,8 +152,9 @@ class Data_load():
         # np.random.shuffle(self.num_sample)
         self.total_sample=len(self.img_path)
         self.frames = frames
+        self.index = 0
        
-    def read_frames(self, batch = 5, if_removal=False):
+    def read_frames(self, batch = 5, if_removal=False, index = None):
         img_frames=[]
         lidar_frames=[]
         gt_frames=[]
@@ -159,18 +162,23 @@ class Data_load():
         k=0
         while (k<batch):
             i=0
-            sample = np.random.choice(self.index_array,size=1) 
-            index = np.where(self.index_array==sample)[0][0] 
-            self.index_array = np.delete(self.index_array, index)
-            index_list.append(index)
+            if index == None : 
+                sample = np.random.choice(self.index_array,size=1) 
+                self.index = np.where(self.index_array==sample)[0][0] 
+            else : 
+                self.index = index
+            
+            self.index_array = np.delete(self.index_array, self.index)
+            index_list.append(self.index)
+
             while (i<(self.frames)):
-                img=rgb_read(self.img_path[self.num_sample[index+i]])
-                depth=depth_read(self.lidar_path[self.num_sample[index+i]])
+                img=rgb_read(self.img_path[self.num_sample[self.index+i]])
+                depth=depth_read(self.lidar_path[self.num_sample[self.index+i]])
                 
                 if if_removal:
                     depth=outlier_removal(depth)
 
-                gt_path=img_path_to_ground_truth(self.img_path[self.num_sample[index+i]])
+                gt_path=img_path_to_ground_truth(self.img_path[self.num_sample[self.index+i]])
                 ground_truth=depth_read(gt_path)
 
                 lidar_frames.append(depth)
