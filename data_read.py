@@ -25,7 +25,6 @@ sys.path.append("../")
 
 sys.path.append("../")
 
-
 def get_paths_and_transform(num_line=64):
     if num_line==64:
         root_d = os.path.join('./depth_selection/KITTI/Sparse_Lidar')
@@ -106,7 +105,7 @@ def depth_read(filename):
     assert np.max(depth_png) > 255, \
         "np.max(depth_png)={}, path={}".format(np.max(depth_png),filename)
 
-    depth = depth_png.astype(np.float) / 256.
+    depth = depth_png.astype(np.float32) / 256.
     # depth[depth_png == 0] = -1.
 
     depth  = np.array(Image.fromarray(depth).resize((1216,352), Image.NEAREST))
@@ -140,7 +139,7 @@ class Data_load():
         # before each first_index_of_scenes to prevent overlap
 		
         for i in range(frames-1):
-        	self.index_array.pop()
+        	self.index_array.pop() # deleting last (frames-1) image indices
 
         for i in first_index_of_scenes :
         	j=1
@@ -228,7 +227,7 @@ def read_one_val(index,line_number=64,with_semantic=True,if_removal=False):
         img_file = Image.open(ground_truth_path+  '/'+i[:27]+'groundtruth_depth'+i[32:])
         ground_truth = np.array(img_file, dtype=int)
         img_file.close()
-        ground_truth = ground_truth.astype(np.float) / 256.
+        ground_truth = ground_truth.astype(np.float32) / 256.
 
         img_one.append(img)
         lidar_one.append(depth[:,:,0])
@@ -267,7 +266,7 @@ def read_one_test(index):
 	    img_file = Image.open(velodyne_raw_path+  '/'+i[:27])
 	    depth_png = np.array(img_file, dtype=int)
 	    img_file.close()
-	    depth = depth_png.astype(np.float) / 256.
+	    depth = depth_png.astype(np.float32) / 256.
 	    # depth[depth_png == 0] = -1.
 	    depth = np.expand_dims(depth,-1)
 	    	    
