@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import glob
 import numpy as np
 import random
-import tensorflow as tf
+# import tensorflow as tf
 import cv2
 import sys
 import numpy as np
-import h5py
+# import h5py
 import os
 import matplotlib.pyplot as plt
 
@@ -153,13 +153,13 @@ class Data_load():
         self.frames = frames
         self.index = 0
        
-    def read_frames(self, batch = 5, if_removal=False, index = None):
+    def read_frames(self, batch_size = 5, if_removal=False, index = None):
         img_frames=[]
         lidar_frames=[]
         gt_frames=[]
         index_list = [] # for identifying calibration params using scene number
         k=0
-        while (k<batch):
+        while (k<batch_size):
             i=0
             if index == None : 
                 sample = np.random.choice(self.index_array,size=1) 
