@@ -48,22 +48,6 @@ def get_paths_and_transform(num_line=64):
     glob_rgb = [get_rgb_paths(i) for i in paths_sparse_lidar]
     return paths_sparse_lidar,glob_rgb
 
-def get_calib_file(scene_date, camera_id): 
-    file_dir = './depth_selection/KITTI/calib/'+scene_date+'/calib_cam_to_cam.txt'
-    f_dir = os.path.join(file_dir)
-    f = open(f_dir)
-    lines = f.readlines()
-    if camera_id=='image_02':
-        K = np.array(lines[25].split(' ')[1:], dtype=np.float32).reshape(3,4)
-        K = K[:3,:3]
-        return K
-    elif camera_id=='image_03':
-        K = np.array(lines[33].split(' ')[1:], dtype=np.float32).reshape(3,4)
-        K = K[:3,:3]
-        return K
-        
-
-
 def img_path_to_lidar(img_path):
     #img_path:'./Dataset/KITTI/RGB/train/2011_09_26_drive_0051_sync/image_02/data/0000000432.png'
     path_list=img_path.split('/')
@@ -157,7 +141,7 @@ class Data_load():
         img_frames=[]
         lidar_frames=[]
         gt_frames=[]
-        index_list = [] # for identifying calibration params using scene number
+        self.index_list = [] # for identifying calibration params using scene number
         k=0
         while (k<batch_size):
             i=0
@@ -168,7 +152,7 @@ class Data_load():
                 self.index = index
             
             self.index_array = np.delete(self.index_array, self.index)
-            index_list.append(self.index)
+            self.index_list.append(self.index)
 
             while (i<(self.frames)):
                 img=rgb_read(self.img_path[self.num_sample[self.index+i]])
@@ -185,7 +169,26 @@ class Data_load():
                 gt_frames.append(ground_truth)
                 i=i+1
             k=k+1
-        return  np.asarray(lidar_frames),np.asarray(gt_frames),np.asarray(img_frames), index_list
+        return  np.asarray(lidar_frames),np.asarray(gt_frames),np.asarray(img_frames), self.index_list
+
+    def get_camera_matrix(self):
+        scene = self.img_path[self.index_list[0]].split('/')[5].split('_')[:3]
+        scene_date = scene[0]
+        camera_id = self.img_path[self.index_list[0]].split('/')[-3]
+        for i in range(1,len(scene)) : 
+            scene_date += '_' + scene[i]
+        file_dir = './depth_selection/KITTI/calib/'+scene_date+'/calib_cam_to_cam.txt'
+        f_dir = os.path.join(file_dir)
+        f = open(f_dir)
+        lines = f.readlines()
+        if camera_id=='image_02':
+            K = np.array(lines[25].split(' ')[1:], dtype=np.float32).reshape(3,4)
+            K = K[:3,:3]
+            return K
+        elif camera_id=='image_03':
+            K = np.array(lines[33].split(' ')[1:], dtype=np.float32).reshape(3,4)
+            K = K[:3,:3]
+            return K
 
         
 def read_one_val(index,line_number=64,with_semantic=True,if_removal=False):

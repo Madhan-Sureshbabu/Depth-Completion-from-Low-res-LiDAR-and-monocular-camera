@@ -158,7 +158,7 @@ class npCloud :
 		self.K = K
 		self.height, self.width = height, width
 
-	def calcCamPoints(self,depth) :
+	def calc3DPoints(self,depth) : # returns 3D world co-ordinates of the 2D image features
 		idx = np.where(depth!=0)
 		pts = []
 		for i in range(len(idx[0])):
@@ -171,3 +171,45 @@ class npCloud :
 		K_inv = np.linalg.inv(self.K)
 		pts3 = np.matmul(K_inv,pts)
 		return pts3
+
+	def transform_points(self,pts,T) :
+		pts = np.vstack((pts,np.ones((1,pts.shape[1]))))
+		return np.matmul(T,pts)
+
+	def checkLimits(self,u,v,z):
+		idx = np.where(u<self.width)
+		u = u[idx]
+		v = v[idx]
+		z = z[idx]
+
+		idx = np.where(v<self.height)
+		u = u[idx]
+		v = v[idx]
+		z = z[idx]
+
+		idx = np.where(u>=0)
+		u = u[idx]
+		v = v[idx]
+		z = z[idx]
+
+		idx = np.where(v>=0)
+		u = u[idx]
+		v = v[idx]
+		z = z[idx]
+
+		idx = np.where(z>=0)
+		u = u[idx]
+		v = v[idx]
+		z = z[idx]
+
+		return u,v,z
+
+	def calc2DPoints(self,pts3d) :  
+		pts2d = np.matmul(self.K,pts3d)
+		pts2d[:2,:] /= pts2d[2,:]
+		u = pts2d[0,:].astype(int)
+		v = pts2d[1,:].astype(int)
+		z = pts3d[2,:]
+		u,v,z = self.checkLimits(u,v,z)
+		return u,v,z
+
