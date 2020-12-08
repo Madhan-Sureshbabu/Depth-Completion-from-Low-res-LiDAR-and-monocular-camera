@@ -213,3 +213,12 @@ class npCloud :
 		u,v,z = self.checkLimits(u,v,z)
 		return u,v,z
 
+	def calcRMSE(self,img1,img2):
+		mask1 = np.where(img1!=0,1,0)
+		mask2 = np.where(img2!=0,1,0)
+		diff = mask1 * mask2 * (img1 - img2)
+		diff_square = diff * diff
+		num_diff = np.where(mask1 * mask2 == 1)[0].shape[0]
+		rmse = np.sqrt(np.sum(diff_square)/num_diff)
+		return rmse
+
