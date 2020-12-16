@@ -4,11 +4,9 @@ import matplotlib.pyplot as plt
 import glob
 import numpy as np
 import random
-# import tensorflow as tf
 import cv2
 import sys
 import numpy as np
-# import h5py
 import os
 import matplotlib.pyplot as plt
 
