@@ -25,12 +25,12 @@ sys.path.append("../")
 
 def get_paths_and_transform(num_line=64):
     if num_line==64:
-        root_d = os.path.join('./depth_selection/KITTI/Sparse_Lidar')
+        root_d = os.path.join('../depth_selection/KITTI/Sparse_Lidar')
     if num_line==32:
-    	root_d = os.path.join('./depth_selection/KITTI/Sparse_Lidar_32')
+    	root_d = os.path.join('../depth_selection/KITTI/Sparse_Lidar_32')
     if num_line==16:
-    	root_d = os.path.join('./depth_selection/KITTI/Sparse_Lidar_16')
-    root_rgb = os.path.join('./depth_selection/KITTI/RGB')
+    	root_d = os.path.join('../depth_selection/KITTI/Sparse_Lidar_16')
+    root_rgb = os.path.join('../depth_selection/KITTI/RGB')
     glob_sparse_lidar = "train/*_sync/proj_depth/velodyne_raw/image_0[2,3]/*.png"
 
     glob_sparse_lidar = os.path.join(root_d,glob_sparse_lidar)
@@ -175,7 +175,7 @@ class Data_load():
         camera_id = self.img_path[self.index_list[0]].split('/')[-3]
         for i in range(1,len(scene)) : 
             scene_date += '_' + scene[i]
-        file_dir = './depth_selection/KITTI/calib/'+scene_date+'/calib_cam_to_cam.txt'
+        file_dir = '../depth_selection/KITTI/calib/'+scene_date+'/calib_cam_to_cam.txt'
         f_dir = os.path.join(file_dir)
         f = open(f_dir)
         lines = f.readlines()
@@ -190,19 +190,19 @@ class Data_load():
 
         
 def read_one_val(index,line_number=64,with_semantic=True,if_removal=False):
-    ground_truth_path='./depth_selection/val_selection_cropped/groundtruth_depth'
+    ground_truth_path='../depth_selection/val_selection_cropped/groundtruth_depth'
     if line_number==64:
-        velodyne_raw_path='./depth_selection/val_selection_cropped/velodyne_raw'
+        velodyne_raw_path='../depth_selection/val_selection_cropped/velodyne_raw'
     if line_number==32:
-        velodyne_raw_path='./depth_selection/val_selection_cropped/velodyne_raw_32'
+        velodyne_raw_path='../depth_selection/val_selection_cropped/velodyne_raw_32'
     if line_number==16:
-        velodyne_raw_path='./depth_selection/val_selection_cropped/velodyne_raw_16'
+        velodyne_raw_path='../depth_selection/val_selection_cropped/velodyne_raw_16'
 
-    image_path='./depth_selection/val_selection_cropped/image'
-    ground_truth=os.listdir('./depth_selection/val_selection_cropped/groundtruth_depth')
-    image=os.listdir('./depth_selection/val_selection_cropped/image')
-    velodyne_raw=os.listdir('./depth_selection/val_selection_cropped/velodyne_raw')
-    intrinsics=os.listdir('./depth_selection/val_selection_cropped/intrinsics')
+    image_path='../depth_selection/val_selection_cropped/image'
+    ground_truth=os.listdir('../depth_selection/val_selection_cropped/groundtruth_depth')
+    image=os.listdir('../depth_selection/val_selection_cropped/image')
+    velodyne_raw=os.listdir('../depth_selection/val_selection_cropped/velodyne_raw')
+    intrinsics=os.listdir('../depth_selection/val_selection_cropped/intrinsics')
     k=0
 
     while (k<self.frames):
