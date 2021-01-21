@@ -1,26 +1,27 @@
-# Depth Completion for Low-res Lidar
+# Depth Completion from Low-res LiDAR and monocular camera
 
-This project aims to perform depth completion using depth images from a 16-line / 32-line Lidar and rgb images from a monocular camera. <br />
-The sparse depth images have been created by downsampling 64-line lidar depth images obtained from [KITTI Depth completion dataset](http://www.cvlibs.net/datasets/kitti/eval_depth.php?benchmark=depth_completion). 
+ - This project focusses on utilising temporal visual information to build denser concatenated depth images comparable to the data from a 64-line LiDAR to serve as an input to the [Self-supervised Depth completion network proposed here](https://github.com/fangchangma/self-supervised-depth-completion). 
+
+ - A novel outlier rejection algorithm involving superpixel matching has been implemented to improve the RMSE metric of the concatenated depth image.
+
+ - The sparse depth images representing data from a 16-line LiDAR has been created by downsampling the images in the [KITTI Depth completion dataset](http://www.cvlibs.net/datasets/kitti/eval_depth.php?benchmark=depth_completion) which hosts data from a 64-line LiDAR. 
 
 ## Project Pipeline
 
-1. Find relative pose between consecutive frames using Perspective-n-Point algorithm  
-<img src="media/PnP.png" width="400" height="300" />   
-2. Use the above result to transform 3D points (calculated from the depth images) to the last co-ordinate frame and project it to the image frame to obtain the concatenated depth image (for benchmarking results) <br />
-Sparse input Depth image <br />
-<img src="media/sparse.png" width="400" height="150" />  
-Concatenated Depth image from 5 consecutive frames:  
-<img src="media/concDepth.png" width="400" height="150" />  
-3. Form superpixels using Simple Linear Iterative Clustering in the RGB images and match them across consecutive frames using the distance from their cluster centres (weighted sum of distance in CIELAB color space and euclidean distance in pixels) <br />
-Superpixels :  
-<img src="media/slic.png" width="400" height="150" />  
-Matched superpixels example :  
-<img src="media/matched_segments.png" width="400" height="300" />   
-4. Reject lidar depth points from superpixel matches whose ```mean depth``` difference is larger than a threshold, and concatenate remaining depth points. Refer Depth_completion.ipynb for quantitative results. <br />
-Concatenated Depth image after Outlier rejection :  
+ - Determine the relative pose between consecutive frames using Perspective-n-Point algorithm. <br />
+ - Use the above result to transform the depth image points from consecutive frames to the last frame in the batch. A batch size of 5 has been used in the experiment. <br />
+**Sparse input Depth image** <br />
+<img src="media/sparse.png" width="400" height="150" /> <br />
+**Concatenated Depth image from 5 consecutive frames** <br />
+<img src="media/concDepth.png" width="400" height="150" /> <br />
+ - Form superpixels using [Simple Linear Iterative Clustering](http://www.cs.jhu.edu/~ayuille/JHUcourses/VisionAsBayesianInference2020/4/s/Achanta_SLIC_PAMI2012.pdf) (SLIC) in the RGB images and match them across consecutive frames using the distance between their cluster centres (weighted sum of distance in CIELAB color space and euclidean distance in pixels) <br />
+**Superpixels**: <br />
+<img src="media/slic.png" width="400" height="150" /> <br />
+**Matched superpixels example** <br />
+<img src="media/matched_segments.png" width="400" height="300" /> <br />
+ - Reject lidar depth points from superpixel matches by thresholding their **mean depth** difference. Concatenate the remaining depth points to form the depth image input to the neural network. As can be seen in [Depth Completion.ipynb](./Project/Depth_completion.ipynb), our method results in an increase in the number of valid points in the final depth image with a significant improvement in the RMSE metric. <br />
+**Concatenated Depth image after Outlier rejection** <br />
 <img src="media/concSLIC.png" width="400" height="150" />
-5. The above concatenated depth image contains higher number of data points with better RMSE than the sparse input depth image. This could then be used to perform depth completion in a supervised learning framework to produce better results.
 
 ## Dependencies  
 ```
